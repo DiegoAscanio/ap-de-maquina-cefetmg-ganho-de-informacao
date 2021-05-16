@@ -1,5 +1,6 @@
 import pandas as pd
 from typing import Union
+import numpy as np
 
 
 def entropia(df_dados:pd.DataFrame, nom_col_classe:str) -> float:
@@ -21,12 +22,12 @@ def entropia(df_dados:pd.DataFrame, nom_col_classe:str) -> float:
         #altere os valores de val_prob e entropia para o calculo correto da mesma
         #val_prob deverá ser a proporção de instancias de uma determinada classe
         #caso tenha duvida sobre o iteritems e value_counts, consulte o passo a passo do pandas
-        val_prob = None
-        entropia += None
+        val_prob = count_atr / num_total
+        entropia += -val_prob * np.log2(val_prob)
     return entropia
 
 
-def ganho_informacao_condicional(df_dados: pd.DataFrame, val_entropia_y:Union[int,float,str,bool], nom_col_classe:str, nom_atributo:str, val_atributo:float) ->float:
+def ganho_informacao_condicional(df_dados: pd.DataFrame, val_entropia_y:Union[int,float,str,bool], nom_col_classe:str, nom_atributo:str, val_atributo:Union[int,float,str,bool]) ->float:
     """
     Calcula o GI(Y|nom_atributo=val_atributo), ou seja,
     calcula o ganho de informação do atributo 'nom_atributo' quando ele assume o valor 'val_atributo'.
@@ -43,12 +44,12 @@ def ganho_informacao_condicional(df_dados: pd.DataFrame, val_entropia_y:Union[in
     #substitua os "None"/0 quando necessario para completar o código
     #.em df_dados_filtrado, filtre o df_dados da forma correta - pensando quais
     #elementos considerar na entropia condicional Entropia(Y|nom_atributo=val_atributo).
-    df_dados_filtrado = None
+    df_dados_filtrado = df_dados [df_dados [nom_atributo] == val_atributo]
 
     #use df_dados_filtrado para obter o valor de Entropia(Y|nom_atributo=val_atributo)
-    val_ent_condicional = 0
+    val_ent_condicional = entropia(df_dados_filtrado, nom_col_classe)
     #use val_ent_condicional para calcular o GI(Y|nom_atributo=val_atributo)
-    val_gi = 0
+    val_gi = val_entropia_y - val_ent_condicional
 
     #para testes:
     #print(f"GI({nom_col_classe}| {nom_atributo}={val_atributo}) = {val_gi}")
@@ -72,15 +73,19 @@ def ganho_informacao(df_dados:pd.DataFrame, nom_col_classe:str, nom_atributo:str
 
     #atenção nessa linha abaixo, qual é o valor que temos que colocar em None?
     #o que precisamos contabilizar dessa vez?
-    ser_count_col = df_dados[None].value_counts()
+    ser_count_col = df_dados[nom_atributo].value_counts()
 
-    val_entropia_y = None
+    val_entropia_y = entropia(df_dados, nom_col_classe)
 
     num_total = len(df_dados)
     val_info_gain = 0
-    for val_atr,count_atr in None:
-        val_prob = None
-        val_info_gain += None
+    for val_atr,count_atr in ser_count_col.iteritems():
+        val_prob = count_atr / num_total
+        val_info_gain += val_prob * ganho_informacao_condicional(df_dados,
+                                            val_entropia_y,
+                                            nom_col_classe,
+                                            nom_atributo,
+                                            val_atr)
 
         #print(f"GI({nom_col_classe}| {nom_atributo}={val_atr}) = {val_gi_val})
 
